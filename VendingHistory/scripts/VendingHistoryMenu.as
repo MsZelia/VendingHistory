@@ -88,6 +88,8 @@ package
       
       private var ctrlDown:Boolean = false;
       
+      private var shiftDown:Boolean = false;
+      
       private const months:* = {
          "Jan":0,
          "Feb":1,
@@ -105,7 +107,6 @@ package
       
       public function VendingHistoryMenu()
       {
-         this.lastSalesHistory = [];
          this.CancelButton = new BSButtonHintData("$CANCEL","TAB","PSN_B","Xenon_B",1,this.onCancel);
          this.SortButton = new BSButtonHintData("$SORT_DATE","R","PSN_X","Xenon_X",1,this.onSortPress);
          super();
@@ -125,6 +126,7 @@ package
       
       private function initVendorLogData() : void
       {
+         this.lastSalesHistory = [];
          this.matchChar = /([a-z0-9.]|\-| )+/;
          var dummy:TextField = new TextField();
          GlobalFunc.SetText(dummy,"$PlayerVendingSuccess");
@@ -252,6 +254,10 @@ package
          {
             this.ctrlDown = true;
          }
+         else if(param1.keyCode == Keyboard.SHIFT)
+         {
+            this.shiftDown = true;
+         }
          else if(this.isSearching)
          {
             if(param1.keyCode == Keyboard.BACKSPACE)
@@ -269,7 +275,7 @@ package
                   this.refreshList();
                }
             }
-            else if(param1.keyCode == 173 && param1.shiftKey)
+            else if(param1.keyCode == 189 && this.shiftDown)
             {
                this.searchPhrase += "_";
                this.refreshList();
@@ -339,6 +345,10 @@ package
          if(param1.keyCode == Keyboard.CONTROL)
          {
             this.ctrlDown = false;
+         }
+         else if(param1.keyCode == Keyboard.SHIFT)
+         {
+            this.shiftDown = false;
          }
       }
       
