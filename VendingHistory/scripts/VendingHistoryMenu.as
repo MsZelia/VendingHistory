@@ -76,6 +76,8 @@ package
       
       private var vendorDataDelim:String;
       
+      private var salesHistoryAtInit:int = -1;
+      
       private var titleItem:String = "";
       
       private var searchPhrase:String = "";
@@ -426,13 +428,17 @@ package
                this.m_ViewSet = true;
             }
             this.updateList();
+            if(salesHistoryAtInit == -1)
+            {
+               this.salesHistoryAtInit = _loc2_.salesA.length;
+            }
             if(_loc2_.salesA.length > 0)
             {
                this.lastSalesHistory = _loc2_.salesA;
             }
             if(this.vendorLogHistory)
             {
-               _loc2_.salesA = this.lastSalesHistory.concat(this.vendorLogHistory);
+               _loc2_.salesA = this.lastSalesHistory.concat(this.vendorLogHistory.slice(this.salesHistoryAtInit));
             }
             if(this.searchPhrase.length > 0)
             {
