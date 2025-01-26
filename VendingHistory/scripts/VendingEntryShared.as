@@ -75,7 +75,7 @@ package
          {
             _loc3_ = new Date();
             _loc3_.setTime(param1 * 1000);
-            if(_loc3_.getTime() - VendingHistoryMenu.getDate().getTime() > ONE_DAY)
+            if(VendingHistoryMenu.getDate().getTime() - _loc3_.getTime() > ONE_DAY)
             {
                _loc2_ = _loc3_.getMonth() + 1 + "/" + _loc3_.getDate() + "/" + _loc3_.getFullYear();
             }

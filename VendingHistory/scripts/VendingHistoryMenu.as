@@ -4,14 +4,22 @@ package
    import Shared.AS3.BSButtonHintData;
    import Shared.AS3.Data.BSUIDataManager;
    import Shared.AS3.Data.FromClientDataEvent;
+   import Shared.AS3.Data.UIDataFromClient;
+   import Shared.AS3.Events.PlatformChangeEvent;
    import Shared.AS3.IMenu;
    import Shared.GlobalFunc;
+   import com.adobe.serialization.json.*;
    import flash.display.MovieClip;
-   import flash.events.Event;
+   import flash.events.*;
+   import flash.net.*;
    import flash.text.TextField;
+   import flash.ui.Keyboard;
+   import flash.utils.*;
    
    public class VendingHistoryMenu extends IMenu
    {
+      
+      public static var DEBUG:Boolean = false;
       
       public static const VENDING_SORT_DATE:uint = 0;
       
@@ -42,7 +50,7 @@ package
       
       private var SortButton:BSButtonHintData;
       
-      private var m_Ascending:Boolean = true;
+      private var m_Ascending:Boolean = false;
       
       private var m_CurrentMenu:MovieClip;
       
@@ -58,17 +66,278 @@ package
       
       private var m_SalesData:Array;
       
+      private var vendorLogData:Array;
+      
+      private var vendorLogHistory:Array;
+      
+      private var lastSalesHistory:Array;
+      
+      private var vendorDataMatch:RegExp;
+      
+      private var vendorDataDelim:String;
+      
+      private var titleItem:String = "";
+      
+      private var searchPhrase:String = "";
+      
+      private var matchChar:*;
+      
+      private var isSearching:Boolean = false;
+      
+      private var ctrlDown:Boolean = false;
+      
+      private const months:* = {
+         "Jan":0,
+         "Feb":1,
+         "Mar":2,
+         "Apr":3,
+         "May":4,
+         "Jun":5,
+         "Jul":6,
+         "Aug":7,
+         "Sep":8,
+         "Oct":9,
+         "Nov":10,
+         "Dec":11
+      };
+      
       public function VendingHistoryMenu()
       {
+         this.lastSalesHistory = [];
          this.CancelButton = new BSButtonHintData("$CANCEL","TAB","PSN_B","Xenon_B",1,this.onCancel);
          this.SortButton = new BSButtonHintData("$SORT_DATE","R","PSN_X","Xenon_X",1,this.onSortPress);
          super();
          this.m_SalesData = [];
+         this.initVendorLogData();
       }
       
       public static function getDate() : Date
       {
          return m_TodaysDate;
+      }
+      
+      private function toString(param1:Object) : String
+      {
+         return new JSONEncoder(param1).getString();
+      }
+      
+      private function initVendorLogData() : void
+      {
+         this.matchChar = /([a-z0-9.]|\-| )+/;
+         var dummy:TextField = new TextField();
+         GlobalFunc.SetText(dummy,"$PlayerVendingSuccess");
+         this.vendorDataDelim = dummy.text.replace("{1}","").replace("{2}","");
+         this.vendorDataMatch = new RegExp(dummy.text.replace("{1}",".+").replace("{2}",".+"),"i");
+         this.loadVendorLogData();
+      }
+      
+      private function loadVendorLogData() : void
+      {
+         var loaderComplete:Function;
+         var url:URLRequest = null;
+         var loader:URLLoader = null;
+         try
+         {
+            loaderComplete = function(param1:Event):void
+            {
+               var i:int;
+               var parts:Array;
+               var timeDateString:String;
+               var timeParts:Array;
+               var year:int;
+               var month:int;
+               var day:int;
+               var hour:int;
+               var minute:int;
+               var second:int;
+               var record:*;
+               var vendorRecords:Array;
+               try
+               {
+                  vendorLogData = loader.data.split("\n");
+                  i = vendorLogData.length - 1;
+                  record = {};
+                  vendorRecords = [];
+                  while(i >= 0)
+                  {
+                     if(vendorLogData[i] != "")
+                     {
+                        parts = vendorLogData[i].split("\t");
+                        if(parts.length == 3)
+                        {
+                           timeDateString = parts[1];
+                           if(vendorDataMatch.test(parts[2]))
+                           {
+                              parts = parts[2].split(vendorDataDelim);
+                              if(parts.length == 2)
+                              {
+                                 record.sBuyerName = parts[0];
+                                 record.sItemName = parts[1].replace("\r","");
+                                 record.uQuantity = 1;
+                                 record.uLegendaryStars = 0;
+                                 record.itemRarityTierIndex = 0;
+                                 record.itemRarityTierCount = 0;
+                                 record.uLegendaryStars = 0;
+                              }
+                              parts = timeDateString.split(" ");
+                              if(parts.length == 6)
+                              {
+                                 timeParts = parts[3].split(":");
+                                 year = !!isNaN(parts[5]) ? 0 : int(parts[5]);
+                                 month = int(months[parts[1]] != null ? months[parts[1]] : 0);
+                                 day = !!isNaN(parts[2]) ? 0 : int(parts[2]);
+                                 hour = 0;
+                                 minute = 0;
+                                 second = 0;
+                                 if(timeParts.length == 3)
+                                 {
+                                    hour = !!isNaN(timeParts[0]) ? 0 : int(timeParts[0]);
+                                    minute = !!isNaN(timeParts[1]) ? 0 : int(timeParts[1]);
+                                    second = !!isNaN(timeParts[2]) ? 0 : int(timeParts[2]);
+                                 }
+                                 record.uPurchaseDate = uint(new Date(year,month,day,hour,minute,second).time / 1000);
+                              }
+                              else
+                              {
+                                 record.uPurchaseDate = uint(m_TodaysDate.time / 1000) - 86401 - (vendorLogData.length - i) * 60;
+                              }
+                           }
+                           else
+                           {
+                              parts = parts[2].split(" ");
+                              if(parts.length > 0 && !isNaN(parts[0]))
+                              {
+                                 record.uTotalValue = uint(parts[0]);
+                              }
+                           }
+                        }
+                        if(record.uTotalValue != null && record.sBuyerName != null)
+                        {
+                           vendorRecords.push(record);
+                           record = {};
+                           if(vendorRecords.length > 4096)
+                           {
+                              break;
+                           }
+                        }
+                     }
+                     i--;
+                  }
+                  vendorLogHistory = vendorRecords;
+                  setTimeout(refreshList,500);
+               }
+               catch(e:Error)
+               {
+                  GlobalFunc.ShowHUDMessage("Error parsing vendorlog data: " + e.getStackTrace() + (i > 0 && vendorLogData != null && vendorLogData.length > 0 ? " (line " + (vendorLogData.length - i + 1) + ")" : ""));
+               }
+            };
+            url = new URLRequest("../vendorlog.txt");
+            loader = new URLLoader();
+            loader.load(url);
+            loader.addEventListener(Event.COMPLETE,loaderComplete);
+            addEventListener(KeyboardEvent.KEY_UP,this.keyUpHandler);
+            addEventListener(KeyboardEvent.KEY_DOWN,this.keyDownHandler);
+         }
+         catch(e:Error)
+         {
+            GlobalFunc.ShowHUDMessage("Error loading vendorlog data: " + e.getStackTrace());
+         }
+      }
+      
+      private function keyDownHandler(param1:KeyboardEvent) : void
+      {
+         if(param1.keyCode == Keyboard.CONTROL)
+         {
+            this.ctrlDown = true;
+         }
+         else if(this.isSearching)
+         {
+            if(param1.keyCode == Keyboard.BACKSPACE)
+            {
+               if(this.searchPhrase.length > 0)
+               {
+                  if(this.ctrlDown)
+                  {
+                     this.searchPhrase = "";
+                  }
+                  else
+                  {
+                     this.searchPhrase = this.searchPhrase.substr(0,this.searchPhrase.length - 1);
+                  }
+                  this.refreshList();
+               }
+            }
+            else if(param1.keyCode == 173 && param1.shiftKey)
+            {
+               this.searchPhrase += "_";
+               this.refreshList();
+            }
+            else if(matchChar.test(String.fromCharCode(param1.charCode)))
+            {
+               this.searchPhrase += String.fromCharCode(param1.charCode);
+               this.refreshList();
+            }
+            else if(param1.keyCode == Keyboard.LEFT)
+            {
+               if(CancelButton.uiKeyboard == PlatformChangeEvent.PLATFORM_PC_KB_BE || CancelButton.uiKeyboard == PlatformChangeEvent.PLATFORM_PC_KB_FR)
+               {
+                  this.searchPhrase += "q";
+               }
+               else
+               {
+                  this.searchPhrase += "a";
+               }
+               this.refreshList();
+            }
+            else if(param1.keyCode == Keyboard.UP)
+            {
+               if(CancelButton.uiKeyboard == PlatformChangeEvent.PLATFORM_PC_KB_BE || CancelButton.uiKeyboard == PlatformChangeEvent.PLATFORM_PC_KB_FR)
+               {
+                  this.searchPhrase += "z";
+               }
+               else
+               {
+                  this.searchPhrase += "w";
+               }
+               this.refreshList();
+            }
+            else if(param1.keyCode == Keyboard.RIGHT)
+            {
+               this.searchPhrase += "d";
+               this.refreshList();
+            }
+            else if(param1.keyCode == Keyboard.DOWN)
+            {
+               this.searchPhrase += "s";
+               this.refreshList();
+            }
+            else if(param1.keyCode == 0 || param1.keyCode == 171 || param1.keyCode == Keyboard.NUMPAD_ADD || param1.keyCode == Keyboard.ENTER)
+            {
+               this.searchPhrase += ".";
+               this.refreshList();
+            }
+            else if(DEBUG)
+            {
+               this.searchPhrase += param1.keyCode;
+               this.refreshList();
+            }
+         }
+      }
+      
+      private function refreshList(str:String) : void
+      {
+         this.onUpdateVendorData(new FromClientDataEvent(new UIDataFromClient({
+            "salesA":[],
+            "bUseSmallWindow":this.m_UseSmallView
+         })));
+      }
+      
+      private function keyUpHandler(param1:KeyboardEvent) : void
+      {
+         if(param1.keyCode == Keyboard.CONTROL)
+         {
+            this.ctrlDown = false;
+         }
       }
       
       override public function onAddedToStage() : void
@@ -146,6 +415,7 @@ package
       
       private function onUpdateVendorData(param1:FromClientDataEvent) : void
       {
+         var searchRegEx:*;
          var _loc2_:* = param1.data;
          if(_loc2_)
          {
@@ -156,6 +426,27 @@ package
                this.m_ViewSet = true;
             }
             this.updateList();
+            if(_loc2_.salesA.length > 0)
+            {
+               this.lastSalesHistory = _loc2_.salesA;
+            }
+            if(this.vendorLogHistory)
+            {
+               _loc2_.salesA = this.lastSalesHistory.concat(this.vendorLogHistory);
+            }
+            if(this.searchPhrase.length > 0)
+            {
+               searchRegEx = new RegExp(this.searchPhrase,"i");
+               _loc2_.salesA = _loc2_.salesA.filter(function(element:*):Boolean
+               {
+                  return searchRegEx.test(element.sBuyerName) || searchRegEx.test(element.sItemName);
+               });
+            }
+            if(this.titleItem == "")
+            {
+               this.titleItem = this.m_CurrentMenu.NameSort_tf.text;
+            }
+            this.m_CurrentMenu.NameSort_tf.text = this.titleItem + "[" + _loc2_.salesA.length + "] : " + this.searchPhrase + (this.isSearching ? "" : " (search:CTRL+F)");
             if(_loc2_.salesA.length > 0)
             {
                if(this.m_EmptyList)
@@ -284,7 +575,7 @@ package
       public function onSortPress() : uint
       {
          this.m_Ascending = !this.m_Ascending;
-         this.setSort(this.m_SortStyle + (this.m_Ascending ? 1 : 0));
+         this.setSort(this.m_SortStyle + (this.m_Ascending ? 0 : 1));
          this.sortEntries();
          return this.m_SortStyle;
       }
@@ -318,11 +609,27 @@ package
                   break;
                case "Cancel":
                case "ForceClose":
-                  this.onCancel();
+                  if(this.isSearching)
+                  {
+                     this.isSearching = false;
+                     this.refreshList();
+                  }
+                  else
+                  {
+                     this.onCancel();
+                  }
                   _loc3_ = true;
                   break;
                case "XButton":
-                  this.onSortPress();
+                  if(!this.isSearching)
+                  {
+                     this.onSortPress();
+                  }
+                  _loc3_ = true;
+                  break;
+               case "LTrigger":
+                  this.isSearching = true;
+                  this.refreshList();
                   _loc3_ = true;
             }
          }
