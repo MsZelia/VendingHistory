@@ -78,6 +78,10 @@ package
       
       private var salesHistoryAtInit:int = -1;
       
+      private var lastMonth:int = -1;
+      
+      private var yearOffset:int = 0;
+      
       private var titleItem:String = "";
       
       private var searchPhrase:String = "";
@@ -147,7 +151,6 @@ package
                var i:int;
                var parts:Array;
                var timeDateString:String;
-               var timeParts:Array;
                var year:int;
                var month:int;
                var day:int;
@@ -156,6 +159,8 @@ package
                var second:int;
                var record:*;
                var vendorRecords:Array;
+               var dateParts:Array = [];
+               var timeParts:Array = [];
                try
                {
                   vendorLogData = loader.data.split("\n");
@@ -183,21 +188,60 @@ package
                                  record.itemRarityTierCount = 0;
                                  record.uLegendaryStars = 0;
                               }
-                              parts = timeDateString.split(" ");
-                              if(parts.length == 6)
+                              dateParts = timeDateString.split(" ");
+                              if(dateParts.length > 3)
                               {
-                                 timeParts = parts[3].split(":");
-                                 year = !!isNaN(parts[5]) ? 0 : int(parts[5]);
-                                 month = int(months[parts[1]] != null ? months[parts[1]] : 0);
-                                 day = !!isNaN(parts[2]) ? 0 : int(parts[2]);
-                                 hour = 0;
-                                 minute = 0;
-                                 second = 0;
-                                 if(timeParts.length == 3)
+                                 timeParts = dateParts[3].split(":");
+                                 if(timeParts.length == 2)
                                  {
-                                    hour = !!isNaN(timeParts[0]) ? 0 : int(timeParts[0]);
-                                    minute = !!isNaN(timeParts[1]) ? 0 : int(timeParts[1]);
-                                    second = !!isNaN(timeParts[2]) ? 0 : int(timeParts[2]);
+                                    hour = !isNaN(timeParts[0]) ? int(timeParts[0]) : 0;
+                                    minute = !isNaN(timeParts[1]) ? int(timeParts[1]) : 0;
+                                    second = 0;
+                                 }
+                                 else if(timeParts.length == 3)
+                                 {
+                                    hour = !isNaN(timeParts[0]) ? int(timeParts[0]) : 0;
+                                    minute = !isNaN(timeParts[1]) ? int(timeParts[1]) : 0;
+                                    second = !isNaN(timeParts[2]) ? int(timeParts[2]) : 0;
+                                 }
+                                 else
+                                 {
+                                    hour = 0;
+                                    minute = 0;
+                                    second = 0;
+                                 }
+                                 day = !isNaN(dateParts[2]) ? int(dateParts[2]) : 0;
+                                 month = int(months[dateParts[1]] != null ? months[dateParts[1]] : 0);
+                                 if(lastMonth != -1)
+                                 {
+                                    if(month > lastMonth)
+                                    {
+                                       yearOffset++;
+                                    }
+                                    lastMonth = month;
+                                 }
+                                 else
+                                 {
+                                    lastMonth = month;
+                                 }
+                                 if(dateParts.length == 5)
+                                 {
+                                    if(dateParts[4].indexOf("GMT") == -1 && !isNaN(dateParts[4]))
+                                    {
+                                       year = int(dateParts[4]);
+                                    }
+                                    else
+                                    {
+                                       year = m_TodaysDate.fullYear - yearOffset;
+                                    }
+                                 }
+                                 else if(dateParts.length == 6 && !isNaN(dateParts[5]))
+                                 {
+                                    year = int(dateParts[5]);
+                                 }
+                                 else
+                                 {
+                                    year = m_TodaysDate.fullYear - yearOffset;
                                  }
                                  record.uPurchaseDate = uint(new Date(year,month,day,hour,minute,second).time / 1000);
                               }
@@ -332,14 +376,6 @@ package
          }
       }
       
-      private function refreshList(str:String) : void
-      {
-         this.onUpdateVendorData(new FromClientDataEvent(new UIDataFromClient({
-            "salesA":[],
-            "bUseSmallWindow":this.m_UseSmallView
-         })));
-      }
-      
       private function keyUpHandler(param1:KeyboardEvent) : void
       {
          if(param1.keyCode == Keyboard.CONTROL)
@@ -350,6 +386,18 @@ package
          {
             this.shiftDown = false;
          }
+         else if(param1.keyCode == Keyboard.F9)
+         {
+            DEBUG = !DEBUG;
+         }
+      }
+      
+      private function refreshList(str:String) : void
+      {
+         this.onUpdateVendorData(new FromClientDataEvent(new UIDataFromClient({
+            "salesA":[],
+            "bUseSmallWindow":this.m_UseSmallView
+         })));
       }
       
       override public function onAddedToStage() : void
