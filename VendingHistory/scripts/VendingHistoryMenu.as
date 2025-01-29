@@ -5,14 +5,14 @@ package
    import Shared.AS3.Data.BSUIDataManager;
    import Shared.AS3.Data.FromClientDataEvent;
    import Shared.AS3.Data.UIDataFromClient;
-   import Shared.AS3.Events.PlatformChangeEvent;
+   import Shared.AS3.Events.CustomEvent;
    import Shared.AS3.IMenu;
    import Shared.GlobalFunc;
    import com.adobe.serialization.json.*;
    import flash.display.MovieClip;
    import flash.events.*;
    import flash.net.*;
-   import flash.text.TextField;
+   import flash.text.*;
    import flash.ui.Keyboard;
    import flash.utils.*;
    
@@ -20,6 +20,8 @@ package
    {
       
       public static var DEBUG:Boolean = false;
+      
+      public static const MOD_VERSION:String = "1.0.0";
       
       public static const VENDING_SORT_DATE:uint = 0;
       
@@ -74,7 +76,7 @@ package
       
       private var vendorDataMatch:RegExp;
       
-      private var vendorDataDelim:String;
+      private var vendorDataDelims:Array;
       
       private var salesHistoryAtInit:int = -1;
       
@@ -82,17 +84,19 @@ package
       
       private var yearOffset:int = 0;
       
-      private var titleItem:String = "";
+      private var findLocalized:String;
+      
+      private var itemLocalized:String;
       
       private var searchPhrase:String = "";
       
-      private var matchChar:*;
-      
-      private var isSearching:Boolean = false;
+      private var _isSearching:Boolean = false;
       
       private var ctrlDown:Boolean = false;
       
-      private var shiftDown:Boolean = false;
+      private var previousFocus:* = null;
+      
+      private var search_tf:TextField;
       
       private const months:* = {
          "Jan":0,
@@ -123,20 +127,143 @@ package
          return m_TodaysDate;
       }
       
+      private function get isSearching() : Boolean
+      {
+         return this._isSearching;
+      }
+      
+      private function set isSearching(value:Boolean) : void
+      {
+         if(value == this._isSearching)
+         {
+            return;
+         }
+         this._isSearching = value;
+         if(value)
+         {
+            this.previousFocus = stage.focus;
+            if(this.search_tf)
+            {
+               stage.focus = this.search_tf;
+               BSUIDataManager.dispatchEvent(new CustomEvent("ControlMap::StartEditText",{"tag":"FriendSearch"}));
+            }
+         }
+         else
+         {
+            stage.focus = this.previousFocus;
+            BSUIDataManager.dispatchEvent(new CustomEvent("ControlMap::EndEditText",{"tag":"FriendSearch"}));
+         }
+         this.refreshList();
+      }
+      
       private function toString(param1:Object) : String
       {
          return new JSONEncoder(param1).getString();
       }
       
+      private function reverse(param1:String) : String
+      {
+         var inputA:* = param1.split("");
+         inputA.reverse();
+         return inputA.join("");
+      }
+      
+      private function initSearchTextfield() : void
+      {
+         var font:TextFormat;
+         this.search_tf = new TextField();
+         this.search_tf.x = -1;
+         this.search_tf.y = -100;
+         this.search_tf.width = 1;
+         this.search_tf.height = 1;
+         this.search_tf.text = "";
+         this.search_tf.mouseWheelEnabled = false;
+         this.search_tf.mouseEnabled = false;
+         this.search_tf.selectable = false;
+         this.search_tf.visible = true;
+         this.search_tf.type = TextFieldType.INPUT;
+         font = new TextFormat("$MAIN_Font",18,16777215);
+         this.search_tf.defaultTextFormat = font;
+         this.search_tf.setTextFormat(font);
+         this.search_tf.addEventListener(KeyboardEvent.KEY_UP,this.onSearchKey);
+         this.search_tf.addEventListener(Event.CHANGE,function(e:*):void
+         {
+            searchPhrase = search_tf.text.toLowerCase().substr(0,64).replace("\n","").replace("\r","");
+            refreshList();
+         });
+         addChild(this.search_tf);
+      }
+      
       private function initVendorLogData() : void
       {
+         this.vendorLogHistory = [];
          this.lastSalesHistory = [];
-         this.matchChar = /([a-z0-9.]|\-| )+/;
+         this.vendorDataDelims = [];
+         this.itemLocalized = this.VendorHistoryFullScreen_mc.NameSort_tf.text;
          var dummy:TextField = new TextField();
+         GlobalFunc.SetText(dummy,"$FIND");
+         this.findLocalized = dummy.text;
          GlobalFunc.SetText(dummy,"$PlayerVendingSuccess");
-         this.vendorDataDelim = dummy.text.replace("{1}","").replace("{2}","");
+         var tempDelims:Array = dummy.text.split("{1}");
+         for each(d in tempDelims)
+         {
+            this.vendorDataDelims = this.vendorDataDelims.concat(d.split("{2}"));
+         }
          this.vendorDataMatch = new RegExp(dummy.text.replace("{1}",".+").replace("{2}",".+"),"i");
+         this.initSearchTextfield();
          this.loadVendorLogData();
+         addEventListener(KeyboardEvent.KEY_UP,this.keyUpHandler);
+         addEventListener(KeyboardEvent.KEY_DOWN,this.keyDownHandler);
+      }
+      
+      private function onSearchKey(param1:KeyboardEvent) : void
+      {
+         if(param1.keyCode == Keyboard.BACKSPACE)
+         {
+            if(this.searchPhrase.length > 0)
+            {
+               if(this.ctrlDown)
+               {
+                  this.search_tf.text = "";
+               }
+            }
+         }
+         else if(param1.keyCode == Keyboard.TAB || param1.keyCode == Keyboard.ESCAPE)
+         {
+            this.isSearching = false;
+         }
+      }
+      
+      private function keyDownHandler(param1:KeyboardEvent) : void
+      {
+         if(param1.keyCode == Keyboard.CONTROL)
+         {
+            this.ctrlDown = true;
+         }
+         else if(param1.keyCode == Keyboard.F5)
+         {
+            this.isSearching = true;
+         }
+      }
+      
+      private function keyUpHandler(param1:KeyboardEvent) : void
+      {
+         if(param1.keyCode == Keyboard.CONTROL)
+         {
+            this.ctrlDown = false;
+         }
+         else if(param1.keyCode == Keyboard.F9)
+         {
+            DEBUG = !DEBUG;
+         }
+      }
+      
+      private function refreshList(str:String) : void
+      {
+         this.onUpdateVendorData(new FromClientDataEvent(new UIDataFromClient({
+            "salesA":[],
+            "bUseSmallWindow":this.m_UseSmallView
+         })));
       }
       
       private function loadVendorLogData() : void
@@ -177,7 +304,7 @@ package
                            timeDateString = parts[1];
                            if(vendorDataMatch.test(parts[2]))
                            {
-                              parts = parts[2].split(vendorDataDelim);
+                              parts = parts[2].substring(vendorDataDelims[0].length,parts[2].length - vendorDataDelims[2].length - 1).split(vendorDataDelims[1]);
                               if(parts.length == 2)
                               {
                                  record.sBuyerName = parts[0];
@@ -272,132 +399,22 @@ package
                      i--;
                   }
                   vendorLogHistory = vendorRecords;
-                  setTimeout(refreshList,500);
+                  setTimeout(refreshList,1000);
                }
-               catch(e:Error)
+               catch(e:*)
                {
-                  GlobalFunc.ShowHUDMessage("Error parsing vendorlog data: " + e.getStackTrace() + (i > 0 && vendorLogData != null && vendorLogData.length > 0 ? " (line " + (vendorLogData.length - i + 1) + ")" : ""));
+                  GlobalFunc.ShowHUDMessage("Error parsing vendorlog data" + (i > 0 && vendorLogData != null && vendorLogData.length > 0 ? " (line " + (i + 1) + "): " : ": ") + e);
                }
             };
             url = new URLRequest("../vendorlog.txt");
             loader = new URLLoader();
             loader.load(url);
             loader.addEventListener(Event.COMPLETE,loaderComplete);
-            addEventListener(KeyboardEvent.KEY_UP,this.keyUpHandler);
-            addEventListener(KeyboardEvent.KEY_DOWN,this.keyDownHandler);
          }
          catch(e:Error)
          {
             GlobalFunc.ShowHUDMessage("Error loading vendorlog data: " + e.getStackTrace());
          }
-      }
-      
-      private function keyDownHandler(param1:KeyboardEvent) : void
-      {
-         if(param1.keyCode == Keyboard.CONTROL)
-         {
-            this.ctrlDown = true;
-         }
-         else if(param1.keyCode == Keyboard.SHIFT)
-         {
-            this.shiftDown = true;
-         }
-         else if(this.isSearching)
-         {
-            if(param1.keyCode == Keyboard.BACKSPACE)
-            {
-               if(this.searchPhrase.length > 0)
-               {
-                  if(this.ctrlDown)
-                  {
-                     this.searchPhrase = "";
-                  }
-                  else
-                  {
-                     this.searchPhrase = this.searchPhrase.substr(0,this.searchPhrase.length - 1);
-                  }
-                  this.refreshList();
-               }
-            }
-            else if(param1.keyCode == 189 && this.shiftDown)
-            {
-               this.searchPhrase += "_";
-               this.refreshList();
-            }
-            else if(matchChar.test(String.fromCharCode(param1.charCode)))
-            {
-               this.searchPhrase += String.fromCharCode(param1.charCode);
-               this.refreshList();
-            }
-            else if(param1.keyCode == Keyboard.LEFT)
-            {
-               if(CancelButton.uiKeyboard == PlatformChangeEvent.PLATFORM_PC_KB_BE || CancelButton.uiKeyboard == PlatformChangeEvent.PLATFORM_PC_KB_FR)
-               {
-                  this.searchPhrase += "q";
-               }
-               else
-               {
-                  this.searchPhrase += "a";
-               }
-               this.refreshList();
-            }
-            else if(param1.keyCode == Keyboard.UP)
-            {
-               if(CancelButton.uiKeyboard == PlatformChangeEvent.PLATFORM_PC_KB_BE || CancelButton.uiKeyboard == PlatformChangeEvent.PLATFORM_PC_KB_FR)
-               {
-                  this.searchPhrase += "z";
-               }
-               else
-               {
-                  this.searchPhrase += "w";
-               }
-               this.refreshList();
-            }
-            else if(param1.keyCode == Keyboard.RIGHT)
-            {
-               this.searchPhrase += "d";
-               this.refreshList();
-            }
-            else if(param1.keyCode == Keyboard.DOWN)
-            {
-               this.searchPhrase += "s";
-               this.refreshList();
-            }
-            else if(param1.keyCode == 0 || param1.keyCode == 171 || param1.keyCode == Keyboard.NUMPAD_ADD || param1.keyCode == Keyboard.ENTER)
-            {
-               this.searchPhrase += ".";
-               this.refreshList();
-            }
-            else if(DEBUG)
-            {
-               this.searchPhrase += param1.keyCode;
-               this.refreshList();
-            }
-         }
-      }
-      
-      private function keyUpHandler(param1:KeyboardEvent) : void
-      {
-         if(param1.keyCode == Keyboard.CONTROL)
-         {
-            this.ctrlDown = false;
-         }
-         else if(param1.keyCode == Keyboard.SHIFT)
-         {
-            this.shiftDown = false;
-         }
-         else if(param1.keyCode == Keyboard.F9)
-         {
-            DEBUG = !DEBUG;
-         }
-      }
-      
-      private function refreshList(str:String) : void
-      {
-         this.onUpdateVendorData(new FromClientDataEvent(new UIDataFromClient({
-            "salesA":[],
-            "bUseSmallWindow":this.m_UseSmallView
-         })));
       }
       
       override public function onAddedToStage() : void
@@ -406,6 +423,15 @@ package
          stage.focus = this;
          this.onShow();
          BSUIDataManager.Subscribe("VendingHistoryInfoData",this.onUpdateVendorData);
+      }
+      
+      protected function PopulateButtonBar() : void
+      {
+         this.ButtonHintBar_mc.visible = true;
+         var _loc1_:Vector.<BSButtonHintData> = new Vector.<BSButtonHintData>();
+         _loc1_.push(this.CancelButton);
+         _loc1_.push(this.SortButton);
+         this.ButtonHintBar_mc.SetButtonHintData(_loc1_);
       }
       
       private function onCancel() : void
@@ -442,40 +468,8 @@ package
          this.PopulateButtonBar();
       }
       
-      protected function PopulateButtonBar() : void
-      {
-         this.ButtonHintBar_mc.visible = true;
-         var _loc1_:Vector.<BSButtonHintData> = new Vector.<BSButtonHintData>();
-         _loc1_.push(this.CancelButton);
-         _loc1_.push(this.SortButton);
-         this.ButtonHintBar_mc.SetButtonHintData(_loc1_);
-      }
-      
-      public function ProcessRightThumbstickInput(param1:uint) : Boolean
-      {
-         var _loc2_:Boolean = false;
-         switch(param1)
-         {
-            case 1:
-               if(this.m_HistoryList.selectedIndex > 0 && !this.m_EmptyList)
-               {
-                  --this.m_HistoryList.selectedIndex;
-               }
-               _loc2_ = true;
-               break;
-            case 3:
-               if(!this.m_EmptyList)
-               {
-                  ++this.m_HistoryList.selectedIndex;
-               }
-               _loc2_ = true;
-         }
-         return true;
-      }
-      
       private function onUpdateVendorData(param1:FromClientDataEvent) : void
       {
-         var searchRegEx:*;
          var _loc2_:* = param1.data;
          if(_loc2_)
          {
@@ -486,31 +480,25 @@ package
                this.m_ViewSet = true;
             }
             this.updateList();
-            if(salesHistoryAtInit == -1)
+            if(this.salesHistoryAtInit == -1)
             {
                this.salesHistoryAtInit = _loc2_.salesA.length;
             }
-            if(_loc2_.salesA.length > 0)
+            if(_loc2_.salesA.length > 0 && this.vendorLogHistory.length != _loc2_.salesA.length)
             {
-               this.lastSalesHistory = _loc2_.salesA;
+               this.lastSalesHistory = _loc2_.salesA.concat();
             }
-            if(this.vendorLogHistory)
+            if(this.vendorLogHistory.length > 0)
             {
                _loc2_.salesA = this.lastSalesHistory.concat(this.vendorLogHistory.slice(this.salesHistoryAtInit));
             }
             if(this.searchPhrase.length > 0)
             {
-               searchRegEx = new RegExp(this.searchPhrase,"i");
                _loc2_.salesA = _loc2_.salesA.filter(function(element:*):Boolean
                {
-                  return searchRegEx.test(element.sBuyerName) || searchRegEx.test(element.sItemName);
+                  return element.sBuyerName.toLowerCase().indexOf(searchPhrase) != -1 || element.sItemName.toLowerCase().indexOf(searchPhrase) != -1 || element.uTotalValue.toString().indexOf(searchPhrase) != -1;
                });
             }
-            if(this.titleItem == "")
-            {
-               this.titleItem = this.m_CurrentMenu.NameSort_tf.text;
-            }
-            this.m_CurrentMenu.NameSort_tf.text = this.titleItem + "[" + _loc2_.salesA.length + "] : " + this.searchPhrase + (this.isSearching ? "" : " (search:CTRL+F)");
             if(_loc2_.salesA.length > 0)
             {
                if(this.m_EmptyList)
@@ -528,6 +516,7 @@ package
                });
                this.m_EmptyList = true;
             }
+            this.m_CurrentMenu.NameSort_tf.text = this.itemLocalized + "[" + _loc2_.salesA.length + "] : " + this.searchPhrase + (this.isSearching ? "" : (this.searchPhrase.length > 0 ? " (F5)" : " (" + this.findLocalized + ":F5)"));
             this.m_HistoryList.disableInput = this.m_EmptyList;
             this.sortEntries();
             this.m_HistoryList.selectedIndex = this.m_EmptyList ? -1 : 0;
@@ -644,6 +633,28 @@ package
          return this.m_SortStyle;
       }
       
+      public function ProcessRightThumbstickInput(param1:uint) : Boolean
+      {
+         var _loc2_:Boolean = false;
+         switch(param1)
+         {
+            case 1:
+               if(this.m_HistoryList.selectedIndex > 0 && !this.m_EmptyList)
+               {
+                  --this.m_HistoryList.selectedIndex;
+               }
+               _loc2_ = true;
+               break;
+            case 3:
+               if(!this.m_EmptyList)
+               {
+                  ++this.m_HistoryList.selectedIndex;
+               }
+               _loc2_ = true;
+         }
+         return true;
+      }
+      
       public function ProcessUserEvent(param1:String, param2:Boolean) : Boolean
       {
          var _loc3_:Boolean = false;
@@ -651,6 +662,11 @@ package
          {
             switch(param1)
             {
+               case "Accept":
+               case "LTrigger":
+               case "ToggleMap":
+                  _loc3_ = true;
+                  break;
                case "Up":
                   if(this.m_HistoryList.selectedIndex > 0 && !this.m_EmptyList)
                   {
@@ -665,20 +681,9 @@ package
                   }
                   _loc3_ = true;
                   break;
-               case "Accept":
-                  _loc3_ = true;
-                  break;
-               case "ToggleMap":
-                  _loc3_ = true;
-                  break;
                case "Cancel":
                case "ForceClose":
-                  if(this.isSearching)
-                  {
-                     this.isSearching = false;
-                     this.refreshList();
-                  }
-                  else
+                  if(!this.isSearching)
                   {
                      this.onCancel();
                   }
@@ -689,11 +694,6 @@ package
                   {
                      this.onSortPress();
                   }
-                  _loc3_ = true;
-                  break;
-               case "LTrigger":
-                  this.isSearching = true;
-                  this.refreshList();
                   _loc3_ = true;
             }
          }
