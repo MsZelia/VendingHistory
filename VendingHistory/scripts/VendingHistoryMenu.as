@@ -21,7 +21,7 @@ package
       
       public static var DEBUG:Boolean = false;
       
-      public static const MOD_VERSION:String = "1.0.0";
+      public static const MOD_VERSION:String = "1.0.1";
       
       public static const VENDING_SORT_DATE:uint = 0;
       
@@ -299,11 +299,21 @@ package
                      if(vendorLogData[i] != "")
                      {
                         parts = vendorLogData[i].split("\t");
+                        if(parts.length == 2)
+                        {
+                           parts = [""].concat(parts);
+                        }
                         if(parts.length == 3)
                         {
                            timeDateString = parts[1];
                            if(vendorDataMatch.test(parts[2]))
                            {
+                              if(record.sBuyerName != null)
+                              {
+                                 record.uTotalValue = 0;
+                                 vendorRecords.push(record);
+                                 record = {};
+                              }
                               parts = parts[2].substring(vendorDataDelims[0].length,parts[2].length - vendorDataDelims[2].length - 1).split(vendorDataDelims[1]);
                               if(parts.length == 2)
                               {
@@ -390,10 +400,10 @@ package
                         {
                            vendorRecords.push(record);
                            record = {};
-                           if(vendorRecords.length > 4096)
-                           {
-                              break;
-                           }
+                        }
+                        if(vendorRecords.length > 4096)
+                        {
+                           break;
                         }
                      }
                      i--;
