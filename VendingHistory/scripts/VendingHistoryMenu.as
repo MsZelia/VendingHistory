@@ -21,7 +21,7 @@ package
       
       public static var DEBUG:Boolean = false;
       
-      public static const MOD_VERSION:String = "1.0.1";
+      public static const MOD_VERSION:String = "1.0.2";
       
       public static const VENDING_SORT_DATE:uint = 0;
       
@@ -435,15 +435,6 @@ package
          BSUIDataManager.Subscribe("VendingHistoryInfoData",this.onUpdateVendorData);
       }
       
-      protected function PopulateButtonBar() : void
-      {
-         this.ButtonHintBar_mc.visible = true;
-         var _loc1_:Vector.<BSButtonHintData> = new Vector.<BSButtonHintData>();
-         _loc1_.push(this.CancelButton);
-         _loc1_.push(this.SortButton);
-         this.ButtonHintBar_mc.SetButtonHintData(_loc1_);
-      }
-      
       private function onCancel() : void
       {
          BSUIDataManager.dispatchEvent(new Event(EVENT_CLOSE));
@@ -476,6 +467,37 @@ package
             this.m_CurrentMenu.Header_tf.text = GlobalFunc.LocalizeFormattedString("$CAMP_SLOTS_VENDING_HISTORY");
          }
          this.PopulateButtonBar();
+      }
+      
+      protected function PopulateButtonBar() : void
+      {
+         this.ButtonHintBar_mc.visible = true;
+         var _loc1_:Vector.<BSButtonHintData> = new Vector.<BSButtonHintData>();
+         _loc1_.push(this.CancelButton);
+         _loc1_.push(this.SortButton);
+         this.ButtonHintBar_mc.SetButtonHintData(_loc1_);
+      }
+      
+      public function ProcessRightThumbstickInput(param1:uint) : Boolean
+      {
+         var _loc2_:Boolean = false;
+         switch(param1)
+         {
+            case 1:
+               if(this.m_HistoryList.selectedIndex > 0 && !this.m_EmptyList)
+               {
+                  --this.m_HistoryList.selectedIndex;
+               }
+               _loc2_ = true;
+               break;
+            case 3:
+               if(!this.m_EmptyList)
+               {
+                  ++this.m_HistoryList.selectedIndex;
+               }
+               _loc2_ = true;
+         }
+         return true;
       }
       
       private function onUpdateVendorData(param1:FromClientDataEvent) : void
@@ -643,28 +665,6 @@ package
          return this.m_SortStyle;
       }
       
-      public function ProcessRightThumbstickInput(param1:uint) : Boolean
-      {
-         var _loc2_:Boolean = false;
-         switch(param1)
-         {
-            case 1:
-               if(this.m_HistoryList.selectedIndex > 0 && !this.m_EmptyList)
-               {
-                  --this.m_HistoryList.selectedIndex;
-               }
-               _loc2_ = true;
-               break;
-            case 3:
-               if(!this.m_EmptyList)
-               {
-                  ++this.m_HistoryList.selectedIndex;
-               }
-               _loc2_ = true;
-         }
-         return true;
-      }
-      
       public function ProcessUserEvent(param1:String, param2:Boolean) : Boolean
       {
          var _loc3_:Boolean = false;
@@ -672,11 +672,6 @@ package
          {
             switch(param1)
             {
-               case "Accept":
-               case "LTrigger":
-               case "ToggleMap":
-                  _loc3_ = true;
-                  break;
                case "Up":
                   if(this.m_HistoryList.selectedIndex > 0 && !this.m_EmptyList)
                   {
@@ -689,6 +684,12 @@ package
                   {
                      ++this.m_HistoryList.selectedIndex;
                   }
+                  _loc3_ = true;
+                  break;
+               case "Accept":
+                  _loc3_ = true;
+                  break;
+               case "ToggleMap":
                   _loc3_ = true;
                   break;
                case "Cancel":
