@@ -5,7 +5,6 @@ package VendingHistoryMenu_fla
    [Embed(source="/_assets/assets.swf", symbol="symbol56")]
    public dynamic class RaritySymbol_24 extends MovieClip
    {
-       
       
       public function RaritySymbol_24()
       {
@@ -39,3 +38,4 @@ package VendingHistoryMenu_fla
       }
    }
 }
+

@@ -5,7 +5,6 @@ package
    [Embed(source="/_assets/assets.swf", symbol="symbol103")]
    public dynamic class HistoryFullList extends BCGridList
    {
-       
       
       public function HistoryFullList()
       {
@@ -13,3 +12,4 @@ package
       }
    }
 }
+

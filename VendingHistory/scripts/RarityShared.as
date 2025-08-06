@@ -4,7 +4,6 @@ package
    {
       
       public static const ITEM_RARITY_NONE:uint = 0;
-       
       
       public function RarityShared()
       {
@@ -17,3 +16,4 @@ package
       }
    }
 }
+

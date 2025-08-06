@@ -5,7 +5,6 @@ package VendingHistoryMenu_fla
    [Embed(source="/_assets/assets.swf", symbol="symbol17")]
    public dynamic class LegendaryStars_29 extends MovieClip
    {
-       
       
       public var Star1_mc:MovieClip;
       
@@ -49,3 +48,4 @@ package VendingHistoryMenu_fla
       }
    }
 }
+

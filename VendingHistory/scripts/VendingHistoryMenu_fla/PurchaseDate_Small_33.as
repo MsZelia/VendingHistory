@@ -6,7 +6,6 @@ package VendingHistoryMenu_fla
    [Embed(source="/_assets/assets.swf", symbol="symbol29")]
    public dynamic class PurchaseDate_Small_33 extends MovieClip
    {
-       
       
       public var text_tf:TextField;
       
@@ -42,3 +41,4 @@ package VendingHistoryMenu_fla
       }
    }
 }
+

@@ -5,7 +5,6 @@ package
    [Embed(source="/_assets/assets.swf", symbol="symbol97")]
    public dynamic class SortIcon extends MovieClip
    {
-       
       
       public function SortIcon()
       {
@@ -24,3 +23,4 @@ package
       }
    }
 }
+

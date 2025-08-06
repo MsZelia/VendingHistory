@@ -5,7 +5,6 @@ package VendingHistoryMenu_fla
    [Embed(source="/_assets/assets.swf", symbol="symbol23")]
    public dynamic class CapsIcon_23 extends MovieClip
    {
-       
       
       public function CapsIcon_23()
       {
@@ -39,3 +38,4 @@ package VendingHistoryMenu_fla
       }
    }
 }
+

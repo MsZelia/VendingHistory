@@ -5,7 +5,6 @@ package
    [Embed(source="/_assets/assets.swf", symbol="symbol91")]
    public dynamic class VHSmallSlider extends BSSlider
    {
-       
       
       public function VHSmallSlider()
       {
@@ -13,3 +12,4 @@ package
       }
    }
 }
+

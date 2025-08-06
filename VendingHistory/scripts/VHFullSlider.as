@@ -5,7 +5,6 @@ package
    [Embed(source="/_assets/assets.swf", symbol="symbol101")]
    public dynamic class VHFullSlider extends BSSlider
    {
-       
       
       public function VHFullSlider()
       {
@@ -13,3 +12,4 @@ package
       }
    }
 }
+

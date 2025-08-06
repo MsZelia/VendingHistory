@@ -6,7 +6,6 @@ package
    [Embed(source="/_assets/assets.swf", symbol="symbol41")]
    public dynamic class MultiBuyerName_Small extends MovieClip
    {
-       
       
       public var text_tf:TextField;
       
@@ -42,3 +41,4 @@ package
       }
    }
 }
+

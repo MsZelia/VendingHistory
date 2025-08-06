@@ -8,7 +8,6 @@ package
    [Embed(source="/_assets/assets.swf", symbol="symbol58")]
    public class VendingSmallEntry extends BSScrollingListEntry
    {
-       
       
       public var RaritySymbol_mc:MovieClip;
       
@@ -96,3 +95,4 @@ package
       }
    }
 }
+

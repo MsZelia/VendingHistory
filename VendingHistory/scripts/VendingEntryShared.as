@@ -9,7 +9,6 @@ package
       public static const MAX_STARS:uint = 5;
       
       public static const ONE_DAY:Number = 86400000;
-       
       
       public function VendingEntryShared()
       {
@@ -33,15 +32,15 @@ package
             param1.PurchaseDate_mc.gotoAndStop(_loc3_);
             param1.CapsIcon_mc.gotoAndStop(_loc3_);
          }
-         param1.ItemName_mc.text_tf.text = !!param2.sItemName ? param2.sItemName : GlobalFunc.LocalizeFormattedString("$Unknown");
+         param1.ItemName_mc.text_tf.text = param2.sItemName ? param2.sItemName : GlobalFunc.LocalizeFormattedString("$Unknown");
          if(param2.uQuantity > 1)
          {
             param1.ItemName_mc.text_tf.appendText(" (" + param2.uQuantity + ")");
          }
-         param1.PurchaseAmount_mc.text_tf.text = !!param2.uTotalValue ? param2.uTotalValue : "0";
+         param1.PurchaseAmount_mc.text_tf.text = param2.uTotalValue ? param2.uTotalValue : "0";
          param1.PurchaseDate_mc.text_tf.text = calculateTimeStamp(param2.uPurchaseDate);
-         var _loc4_:uint;
-         if((_loc4_ = uint(param2.uLegendaryStars)) > 0)
+         var _loc4_:uint = uint(param2.uLegendaryStars);
+         if(_loc4_ > 0)
          {
             param1.LegendaryStars_mc.visible = true;
             param1.LegendaryStars_mc.gotoAndStop(_loc4_);
@@ -50,7 +49,7 @@ package
                _loc5_ = 1;
                while(_loc5_ <= _loc4_ && _loc5_ <= MAX_STARS)
                {
-                  param1.LegendaryStars_mc["Star" + _loc5_ + "_mc"].gotoAndStop(!!param1.selected ? "selected" : _loc3_);
+                  param1.LegendaryStars_mc["Star" + _loc5_ + "_mc"].gotoAndStop(param1.selected ? "selected" : _loc3_);
                   _loc5_++;
                }
             }
@@ -63,7 +62,7 @@ package
          param1.CapsIcon_mc.visible = !param2.fakeItem;
          param1.PurchaseAmount_mc.visible = !param2.fakeItem;
          param1.PurchaseDate_mc.visible = !param2.fakeItem;
-         param1.Warning_tf.text = !!param2.fakeItem ? param2.sWarning : "";
+         param1.Warning_tf.text = param2.fakeItem ? param2.sWarning : "";
          return _loc3_;
       }
       
@@ -117,3 +116,4 @@ package
       }
    }
 }
+

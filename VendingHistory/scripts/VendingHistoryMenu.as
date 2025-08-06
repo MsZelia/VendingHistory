@@ -40,7 +40,6 @@ package
       public static const ARROW_OFFSET:uint = 12;
       
       public static var m_TodaysDate:Date = new Date();
-       
       
       public var VendorHistoryFullScreen_mc:MovieClip;
       
@@ -712,3 +711,4 @@ package
       }
    }
 }
+

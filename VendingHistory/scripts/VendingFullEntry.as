@@ -10,7 +10,6 @@ package
    {
       
       private static const ICON_PADDING:Number = 10;
-       
       
       public var RaritySymbol_mc:MovieClip;
       
@@ -67,3 +66,4 @@ package
       }
    }
 }
+
