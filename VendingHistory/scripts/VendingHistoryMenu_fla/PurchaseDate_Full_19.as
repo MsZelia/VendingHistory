@@ -3,7 +3,7 @@ package VendingHistoryMenu_fla
    import flash.display.MovieClip;
    import flash.text.TextField;
    
-   [Embed(source="/_assets/assets.swf", symbol="symbol67")]
+   [Embed(source="/_assets/assets.swf", symbol="symbol34")]
    public dynamic class PurchaseDate_Full_19 extends MovieClip
    {
       

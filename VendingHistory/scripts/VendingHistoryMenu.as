@@ -21,7 +21,7 @@ package
       
       public static var DEBUG:Boolean = false;
       
-      public static const MOD_VERSION:String = "1.0.5";
+      public static const MOD_VERSION:String = "1.0.6";
       
       public static const VENDING_SORT_DATE:uint = 0;
       
@@ -352,7 +352,7 @@ package
                                  {
                                     if(month > lastMonth)
                                     {
-                                       yearOffset++;
+                                       ++yearOffset;
                                     }
                                     lastMonth = month;
                                  }

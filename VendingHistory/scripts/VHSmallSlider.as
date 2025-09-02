@@ -2,7 +2,7 @@ package
 {
    import Shared.AS3.BSSlider;
    
-   [Embed(source="/_assets/assets.swf", symbol="symbol91")]
+   [Embed(source="/_assets/assets.swf", symbol="symbol46")]
    public dynamic class VHSmallSlider extends BSSlider
    {
       

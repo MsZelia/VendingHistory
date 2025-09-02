@@ -2,7 +2,7 @@ package VendingHistoryMenu_fla
 {
    import flash.display.MovieClip;
    
-   [Embed(source="/_assets/assets.swf", symbol="symbol23")]
+   [Embed(source="/_assets/assets.swf", symbol="symbol10")]
    public dynamic class CapsIcon_23 extends MovieClip
    {
       

@@ -3,7 +3,7 @@ package
    import flash.display.MovieClip;
    import flash.text.TextField;
    
-   [Embed(source="/_assets/assets.swf", symbol="symbol41")]
+   [Embed(source="/_assets/assets.swf", symbol="symbol16")]
    public dynamic class MultiBuyerName_Small extends MovieClip
    {
       

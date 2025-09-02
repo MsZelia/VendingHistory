@@ -3,7 +3,7 @@ package VendingHistoryMenu_fla
    import flash.display.MovieClip;
    import flash.text.TextField;
    
-   [Embed(source="/_assets/assets.swf", symbol="symbol85")]
+   [Embed(source="/_assets/assets.swf", symbol="symbol40")]
    public dynamic class ItemName_Full_22 extends MovieClip
    {
       

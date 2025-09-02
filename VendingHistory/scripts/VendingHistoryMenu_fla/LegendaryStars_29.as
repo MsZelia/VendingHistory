@@ -2,7 +2,7 @@ package VendingHistoryMenu_fla
 {
    import flash.display.MovieClip;
    
-   [Embed(source="/_assets/assets.swf", symbol="symbol17")]
+   [Embed(source="/_assets/assets.swf", symbol="symbol8")]
    public dynamic class LegendaryStars_29 extends MovieClip
    {
       

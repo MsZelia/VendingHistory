@@ -2,7 +2,7 @@ package VendingHistoryMenu_fla
 {
    import flash.display.MovieClip;
    
-   [Embed(source="/_assets/assets.swf", symbol="symbol56")]
+   [Embed(source="/_assets/assets.swf", symbol="symbol27")]
    public dynamic class RaritySymbol_24 extends MovieClip
    {
       
