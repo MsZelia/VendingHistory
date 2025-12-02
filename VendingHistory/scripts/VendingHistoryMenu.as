@@ -8,8 +8,10 @@ package
    import Shared.AS3.Events.CustomEvent;
    import Shared.AS3.IMenu;
    import Shared.GlobalFunc;
+   import Shared.ResolutionDarkeners;
    import com.adobe.serialization.json.*;
    import flash.display.MovieClip;
+   import flash.display.Shape;
    import flash.events.*;
    import flash.net.*;
    import flash.text.*;
@@ -21,7 +23,7 @@ package
       
       public static var DEBUG:Boolean = false;
       
-      public static const MOD_VERSION:String = "1.0.7";
+      public static const MOD_VERSION:String = "1.0.8";
       
       public static const VENDING_SORT_DATE:uint = 0;
       
@@ -432,6 +434,18 @@ package
          stage.focus = this;
          this.onShow();
          BSUIDataManager.Subscribe("VendingHistoryInfoData",this.onUpdateVendorData);
+         BSUIDataManager.Subscribe("ScreenResolutionData",this.onScreenResolutionData);
+      }
+      
+      private function onScreenResolutionData(param1:FromClientDataEvent) : void
+      {
+         var _loc2_:Shape = null;
+         if(param1.data)
+         {
+            _loc2_ = ResolutionDarkeners.CreateDarkener(param1.data.ScreenWidth,param1.data.ScreenHeight,ResolutionDarkeners.DARKENER_TYPE_SOLID);
+            addChildAt(_loc2_,0);
+            ResolutionDarkeners.PositionDarkener(_loc2_);
+         }
       }
       
       private function onCancel() : void
