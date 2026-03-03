@@ -43,7 +43,7 @@ package
          var _loc5_:String = "";
          if(param1.sBuyerName)
          {
-            _loc5_ = GlobalFunc.GeneratePlayerNameAndTitle(param1.sBuyerName);
+            _loc5_ = GlobalFunc.GenerateNameAndTitle(param1.sBuyerName);
          }
          else
          {

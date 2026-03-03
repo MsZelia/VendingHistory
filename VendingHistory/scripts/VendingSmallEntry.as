@@ -46,7 +46,7 @@ package
          {
             if(GlobalFunc.HasPlayerTitle(param1.sBuyerName))
             {
-               _loc5_ = GlobalFunc.GeneratePlayerNameAndTitle(param1.sBuyerName);
+               _loc5_ = GlobalFunc.GenerateNameAndTitle(param1.sBuyerName);
                _loc6_ = true;
             }
             else
