@@ -23,7 +23,7 @@ package
       
       public static var DEBUG:Boolean = false;
       
-      public static const MOD_VERSION:String = "1.0.12";
+      public static const MOD_VERSION:String = "1.0.13";
       
       public static const VENDING_SORT_DATE:uint = 0;
       
