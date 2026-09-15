@@ -23,7 +23,7 @@ package
       
       public static var DEBUG:Boolean = false;
       
-      public static const MOD_VERSION:String = "1.0.13";
+      public static const MOD_VERSION:String = "1.0.14";
       
       public static const VENDING_SORT_DATE:uint = 0;
       
@@ -486,8 +486,8 @@ package
       {
          this.ButtonHintBar_mc.visible = true;
          var _loc1_:Vector.<BSButtonHintData> = new Vector.<BSButtonHintData>();
-         _loc1_.push(this.CancelButton);
          _loc1_.push(this.SortButton);
+         _loc1_.push(this.CancelButton);
          this.ButtonHintBar_mc.SetButtonHintData(_loc1_);
       }
       
